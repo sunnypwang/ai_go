@@ -1,5 +1,6 @@
 
 const boardTable = document.getElementById("boardTable")
+const turnDisplayDiv = document.getElementById("turnDisplay")
 const debugDiv = document.getElementById("debug")
 const debugPrevDiv = document.getElementById("debugPrev")
 const SIZE = 5
@@ -7,6 +8,9 @@ const C_EMPTY = 0
 const C_BLACK = 1
 const C_WHITE = 2
 const COLORHEX = ["#ff0000","#363636","#eeeeee"]
+const PASS_LIM = 2;
+var passCount = 0;
+var turnCount = 1;
 var boardState;
 var boardStatePrev;
 var blackTurn = true;
@@ -33,8 +37,13 @@ resetBoard();
 function resetBoard() { 
     console.log('resetBoard')
     boardState = getEmptyBoard();
-    // console.log(boardState)
+    boardStatePrev = getEmptyBoard();
+    lastMove = null;
+    passCount = 0;
+    turnCount = 0;
+    blackTurn = true;
     drawBoard();
+    updateTurnDisplay();
 }
 
 function getEmptyBoard(){
@@ -48,6 +57,7 @@ function getEmptyBoard(){
     return board
 }
 
+
 function updateBoard(i,j,color) {
     console.log('update',i,j,color);
     boardStatePrev = deepCopy(boardState);
@@ -57,9 +67,28 @@ function updateBoard(i,j,color) {
     if (captured.length > 0){
         removeStones(boardState, captured)
     }
+    blackTurn = !blackTurn;
+    passCount = 0;
+    turnCount++;
     debugDiv.innerHTML = lastMove + "<br>" + boardState
     debugPrevDiv.innerHTML = boardStatePrev
     drawBoard();
+    updateTurnDisplay();
+}
+
+function passTurn(){
+    passCount++;
+    turnCount++;
+    blackTurn = !blackTurn;
+    updateTurnDisplay();
+    if (passCount == PASS_LIM){
+        gameOver();
+    }
+}
+
+function gameOver(){
+    alert('Game Over');
+    resetBoard();
 }
 
 function checkValidMove(i,j,color){
@@ -159,6 +188,11 @@ function drawBoard(){ // redraw whole board
     }
 }
 
+function updateTurnDisplay(){
+    turnText = (blackTurn) ? "Black's Turn" : "White's Turn";
+    turnDisplayDiv.innerHTML = `<h1>${turnText}</h1><h2>${turnCount}</h2>`
+}
+
 function drawUpdateBoard(i,j){ //only update specific cell
     var svg = getSVG(getStone(boardState,i,j))
     var idx = parseInt(i)*5 + parseInt(j)
@@ -221,10 +255,8 @@ function clickCell(cell){
     if (isValid){
         // console.log('click',coord)
         updateBoard(coord[0],coord[1],color)
-        blackTurn = !blackTurn;
         cell.disabled = true;
     }
-
 }
 
 function getCoord(cell) {
